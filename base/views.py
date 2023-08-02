@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.contrib.auth.forms import UserCreationForm
 
 from .forms import RoomForm
-from .models import Room, Topic
+from .models import Room, Topic, Message
 
 
 def login_page(request):
@@ -71,8 +71,20 @@ def home(request):
 
 
 def room(request, pk):
-    rooms = Room.objects.get(id=pk)
-    context = {'room': rooms}
+    room = Room.objects.get(id=pk)
+    room_messages = room.message_set.all().order_by('-created')
+    participants = room.participants.all()
+    if request.method == 'POST':
+        message = Message.objects.create(
+            user=request.user,
+            room=room,
+            body=request.POST.get('body')
+        )
+        room.participants.add(request.user)
+        return redirect('room', pk=room.id)
+
+    context = {'room': room, 'room_messages': room_messages,
+               'participants': participants}
     return render(request=request, template_name='base/room.html', context=context)
 
 
@@ -115,3 +127,15 @@ def delete_room(request, pk):
         return redirect('home')
     return render(request=request, template_name='base/delete.html',
                   context={'obj': room})
+
+
+@login_required(login_url='login')
+def delete_message(request, pk):
+    message = Message.objects.get(id=pk)
+    if request.user != message.user:
+        return HttpResponse('Your are not allowed here!!!')
+    if request.method == 'POST':
+        message.delete()
+        return redirect('home')
+    return render(request=request, template_name='base/delete.html',
+                  context={'obj': message})
