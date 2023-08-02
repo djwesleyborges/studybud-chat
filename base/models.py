@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
 
 class Topic(models.Model):
@@ -36,6 +36,9 @@ class Message(models.Model):
     updated = models.DateTimeField(auto_now=True)
     # auto_now_add never change the value
     created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-updated', '-created']
 
     def __str__(self):
         return self.body[0:50]
