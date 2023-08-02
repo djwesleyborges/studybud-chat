@@ -5,17 +5,19 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.contrib.auth.forms import UserCreationForm
 
 from .forms import RoomForm
 from .models import Room, Topic
 
 
 def login_page(request):
+    page = 'login'
     if request.user.is_authenticated:
         return redirect('home')
 
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = request.POST.get('username').lower()
         password = request.POST.get('password')
         try:
             user = User.objects.get(username=username)
@@ -30,7 +32,7 @@ def login_page(request):
         else:
             messages.error(request=request,
                            message='Username or password does not exist.')
-    context = {}
+    context = {'page': page}
     return render(request=request, template_name='base/login_register.html',
                   context=context)
 
@@ -38,6 +40,21 @@ def login_page(request):
 def logout_page(request):
     logout(request=request)
     return redirect('login')
+
+
+def register_page(request):
+    form = UserCreationForm()
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.username = user.username.lower()
+            user.save()
+            return redirect('home')
+        else:
+            messages.error(request, 'An error occurred during registration.')
+    return render(request=request, template_name='base/login_register.html',
+                  context={'form': form})
 
 
 def home(request):
