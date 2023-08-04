@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.forms import UserCreationForm
 
-from .forms import RoomForm
+from .forms import RoomForm, UserForm
 from .models import Room, Topic, Message
 
 
@@ -161,3 +161,17 @@ def delete_message(request, pk):
         return redirect('home')
     return render(request=request, template_name='base/delete.html',
                   context={'obj': message})
+
+
+@login_required(login_url='login')
+def update_user(request):
+    user = request.user
+    form = UserForm(instance=user)
+    if request.method == 'POST':
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('user-profile', pk=user.id)
+    context = {'form': form}
+    return render(request=request, template_name='base/update-user.html',
+                  context=context)
